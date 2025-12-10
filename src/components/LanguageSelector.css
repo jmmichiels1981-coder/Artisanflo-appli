@@ -1,0 +1,90 @@
+.language-selector-container {
+    position: relative;
+    display: inline-block;
+    z-index: 1000;
+}
+
+.language-btn {
+    background-color: rgba(20, 20, 20, 0.8);
+    border: 1px solid #333;
+    border-radius: 20px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.language-btn:hover {
+    background-color: rgba(40, 40, 40, 0.9);
+    border-color: #555;
+}
+
+.globe-icon {
+    font-size: 1.1rem;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background-color: #000;
+    border-radius: 12px;
+    padding: 8px;
+    width: 200px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    border: 1px solid #333;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+    margin-bottom: 2px;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-item.selected {
+    background: linear-gradient(90deg, #ff8c00 0%, #ff6b00 100%);
+    color: white;
+}
+
+.flag-icon {
+    width: 24px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.check-mark {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
