@@ -10,6 +10,11 @@ services:
     buildCommand: 'npm install && npm run build'
     # Le Publish Directory doit être relatif au RootDir ('frontend'), donc seulement 'dist'
     publishPath: dist
+    # Règle de réécriture pour PWA/SPA (Redirige tout vers index.html)
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     pullRequest:
       autoDeploy: false
       
