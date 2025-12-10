@@ -4,8 +4,11 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from the root .env file (parent directory)
-env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+# Load environment variables
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+if not os.path.exists(env_path):
+    # Fallback to root or other locations if needed
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
 load_dotenv(env_path)
 
 app = Flask(__name__)
