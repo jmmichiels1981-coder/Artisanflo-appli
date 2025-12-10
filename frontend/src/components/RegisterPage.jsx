@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import LanguageSelector from './LanguageSelector';
+import API_URL from '../config';
 import './LoginPage.css';
 
 const COUNTRIES = [
@@ -36,7 +37,6 @@ const COUNTRIES = [
         value: 'Québec',
         label: 'Québec - 30.00 CAD/mois * GRATUIT jusqu\'au 31/08/2026',
         businessLabel: 'NEQ',
-        // Quebec specific structure handled in render
         isQuebec: true
     },
     {
@@ -71,8 +71,6 @@ const COUNTRIES = [
         value: 'Etats-Unis',
         label: 'Etats-Unis - 21.99 USD/mois * GRATUIT jusqu\'au 31/08/2026',
         businessLabel: 'EIN (Employer Identification Number)',
-        // No simple TVA intra equivalent often, but using simplified view if needed. 
-        // Request didn't specify TVA for US, but "Etats-Unis : EIN". Assuming mostly business ID.
     }
 ];
 
@@ -84,8 +82,7 @@ const JOB_LIST = [
     "Dératisation", "Désinsectisation", "Domotique", "Ebeniste", "Elagueur", "Electricien IRVE", "Electricien auto",
     "Electricien batîment", "Entrepreneur batîment", "Entretien Feux", "Fabricant Luminaires artisanaux",
     "Fabriquant meubles", "Fabriquant textiles", "Ferronnier", "Ferronnier d'art", "Forgeron", "Graphiste", "Graveur",
-    "Horloger", "Informatique", "Installateur Porte de garage & portails", "Installateur VMC", "Installateur de feux",
-    "Installateur sanitaire", "Installateur vollets roulants", "Installateur/technicien Pompes à chaleur",
+    "Horloger", "Imprimeur", "Informaticien (dépannage)", "Jardinier",
     "Joaillier", "Luthier", "Maçon", "Maroquinier", "Menuisier", "Menuisier Aluminium", "Menuisier PVC", "Mécanicien auto",
     "Mécanicien moto", "Métallier", "Modéliste", "Paysagiste", "Peintre Art & Déco", "Peintre automobile",
     "Peintre en batîment", "Photographe indépendant", "Plaquiste", "Plombier", "Plâtrier", "Potier", "Ramonage",
@@ -94,13 +91,14 @@ const JOB_LIST = [
     "Terrassier", "Tisserand", "Tourneur sur bois", "Verrier", "Vidéaste indépendant", "Vitrier", "Zingueur"
 ].sort((a, b) => a.localeCompare(b));
 
-// Append 'Autre' at the end
 const JOBS = [...JOB_LIST, "Autre"];
 
 const RegisterPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const savedState = location.state?.formData;
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(savedState || {
         companyName: '',
         lastName: '',
         firstName: '',
@@ -118,15 +116,15 @@ const RegisterPage = () => {
         mobile: '',
         job: '',
         customJob: '',
-        tva: '',
+        tva: 'assujetti',
         businessId: '',
         tvaIntra: '',
-        // Quebec specifics
         tvq: '',
         tps: ''
     });
 
-    // Validations
+    const [isVerifying, setIsVerifying] = useState(false);
+
     const validateForm = () => {
         if (!formData.lastName || !formData.firstName || !formData.email || !formData.password ||
             !formData.pin || !formData.street || !formData.number || !formData.zipCode ||
@@ -153,18 +151,30 @@ const RegisterPage = () => {
         return true;
     };
 
+    // Helper for mobile placeholder based on country
+    const getMobilePlaceholder = (country) => {
+        if (!country) return '';
+        if (country.includes('France')) return '+33 6 00 00 00 00';
+        if (country.includes('Belgique')) return '+32 400 00 00 00';
+        if (country.includes('Luxembourg')) return '+352 600 00 00 00';
+        if (country.includes('Suisse')) return '+41 70 000 00 00';
+        if (country.includes('Espagne')) return '+34 600 00 00 00';
+        if (country.includes('Italie')) return '+39 300 000 0000';
+        if (country.includes('Allemagne')) return '+49 150 00000000';
+        if (country.includes('Royaume-Uni')) return '+44 7000 000000';
+        if (country.includes('USA')) return '+1 555-555-5555';
+        if (country.includes('Canada')) return '+1 555-555-5555';
+        return '';
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-
-        // Input restrictions
         let newValue = value;
 
-        // No letters (Mobile, Street Number)
         if (name === 'mobile' || name === 'number') {
             newValue = value.replace(/[a-zA-Z]/g, '');
         }
 
-        // No numbers (City, Street, Names)
         if (name === 'city' || name === 'street' || name === 'lastName' || name === 'firstName') {
             newValue = value.replace(/[0-9]/g, '');
         }
@@ -175,11 +185,41 @@ const RegisterPage = () => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (validateForm()) {
-            console.log("Form Data Submitted:", formData);
-            // navigate('/register/payment');
+            setIsVerifying(true);
+            try {
+                const idToCheck = formData.businessId || formData.tvaIntra;
+                const res = await fetch(`${API_URL}/auth/verify-vat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        country: formData.country,
+                        vatNumber: idToCheck
+                    })
+                });
+
+                const result = await res.json();
+
+                if (result.valid) {
+                    navigate('/register/payment', { state: { formData } });
+                } else {
+                    // Fail open or closed? Let's show message.
+                    if (result.valid === false) {
+                        alert(result.message || "Vérification échouée.");
+                    } else {
+                        // Fallback in case of undefined valid
+                        navigate('/register/payment', { state: { formData } });
+                    }
+                }
+
+            } catch (err) {
+                console.error("Verification error:", err);
+                alert("Erreur de connexion. Veuillez réessayer.");
+            } finally {
+                setIsVerifying(false);
+            }
         }
     };
 
@@ -207,231 +247,100 @@ const RegisterPage = () => {
                 <div className="login-card">
                     <form onSubmit={handleSubmit}>
 
-                        {/* 1. Nom de l'entreprise */}
                         <div className="form-group">
                             <label htmlFor="companyName">Nom de l'entreprise</label>
-                            <input
-                                type="text"
-                                name="companyName"
-                                id="companyName"
-                                className="input-field"
-                                value={formData.companyName}
-                                onChange={handleChange}
-                            />
+                            <input type="text" name="companyName" id="companyName" className="input-field" value={formData.companyName} onChange={handleChange} />
                         </div>
 
-                        {/* 2. Nom & Prénom du dirigeant */}
                         <div className="row-2-cols">
                             <div className="form-group">
                                 <label htmlFor="lastName">Nom du dirigeant</label>
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    id="lastName"
-                                    className="input-field"
-                                    value={formData.lastName}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="lastName" id="lastName" className="input-field" value={formData.lastName} onChange={handleChange} required />
                             </div>
                             <div className="form-group">
                                 <label htmlFor="firstName">Prénom du dirigeant</label>
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    id="firstName"
-                                    className="input-field"
-                                    value={formData.firstName}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="firstName" id="firstName" className="input-field" value={formData.firstName} onChange={handleChange} required />
                             </div>
                         </div>
 
-                        {/* 3. Email */}
                         <div className="form-group">
                             <label htmlFor="email">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                id="email"
-                                className="input-field"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="email" name="email" id="email" className="input-field" value={formData.email} onChange={handleChange} required />
                         </div>
 
-                        {/* 4. Mot de passe */}
                         <div className="form-group">
                             <label htmlFor="password">Mot de passe</label>
-                            <input
-                                type="password"
-                                name="password"
-                                id="password"
-                                className="input-field"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="password" name="password" id="password" className="input-field" value={formData.password} onChange={handleChange} required />
                         </div>
 
-                        {/* 5. Répéter mot de passe */}
                         <div className="form-group">
                             <label htmlFor="confirmPassword">Répéter mot de passe</label>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                id="confirmPassword"
-                                className="input-field"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="password" name="confirmPassword" id="confirmPassword" className="input-field" value={formData.confirmPassword} onChange={handleChange} required />
                         </div>
 
-                        {/* 6. Code PIN */}
                         <div className="form-group">
                             <label htmlFor="pin">Code pin (4 chiffres)</label>
-                            <input
-                                type="text"
-                                name="pin"
-                                id="pin"
-                                maxLength="4"
-                                className="input-field"
-                                value={formData.pin}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="password" name="pin" id="pin" maxLength="4" className="input-field" value={formData.pin} onChange={handleChange} required />
                         </div>
 
-                        {/* 7. Répéter Code PIN */}
                         <div className="form-group">
                             <label htmlFor="confirmPin">Répéter le code pin</label>
-                            <input
-                                type="text"
-                                name="confirmPin"
-                                id="confirmPin"
-                                maxLength="4"
-                                className="input-field"
-                                value={formData.confirmPin}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="password" name="confirmPin" id="confirmPin" maxLength="4" className="input-field" value={formData.confirmPin} onChange={handleChange} required />
                         </div>
 
-                        {/* 8. Pays */}
                         <div className="form-group">
                             <label htmlFor="country">Pays</label>
-                            <select
-                                name="country"
-                                id="country"
-                                className="input-field"
-                                value={formData.country}
-                                onChange={handleChange}
-                            >
+                            <select name="country" id="country" className="input-field" value={formData.country} onChange={handleChange}>
                                 {COUNTRIES.map((c, idx) => (
-                                    <option key={idx} value={c.label}>
-                                        {c.label}
-                                    </option>
+                                    <option key={idx} value={c.label}>{c.label}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* 9. Rue & Numéro */}
                         <div style={{ display: 'flex', gap: '15px' }}>
                             <div className="form-group" style={{ flex: '1' }}>
                                 <label htmlFor="street">Rue</label>
-                                <input
-                                    type="text"
-                                    name="street"
-                                    id="street"
-                                    className="input-field"
-                                    value={formData.street}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="street" id="street" className="input-field" value={formData.street} onChange={handleChange} required />
                             </div>
                             <div className="form-group" style={{ width: '100px' }}>
                                 <label htmlFor="number">Numéro</label>
-                                <input
-                                    type="text"
-                                    name="number"
-                                    id="number"
-                                    className="input-field"
-                                    value={formData.number}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="number" id="number" className="input-field" value={formData.number} onChange={handleChange} required />
                             </div>
                         </div>
 
-                        {/* 10. Boîte & Code Postal */}
                         <div style={{ display: 'flex', gap: '15px' }}>
                             <div className="form-group" style={{ width: '100px' }}>
                                 <label htmlFor="box">Boîte</label>
-                                <input
-                                    type="text"
-                                    name="box"
-                                    id="box"
-                                    className="input-field"
-                                    value={formData.box}
-                                    onChange={handleChange}
-                                />
+                                <input type="text" name="box" id="box" className="input-field" value={formData.box} onChange={handleChange} />
                             </div>
                             <div className="form-group" style={{ flex: 1 }}>
                                 <label htmlFor="zipCode">Code Postal</label>
-                                <input
-                                    type="text"
-                                    name="zipCode"
-                                    id="zipCode"
-                                    className="input-field"
-                                    value={formData.zipCode}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="zipCode" id="zipCode" className="input-field" value={formData.zipCode} onChange={handleChange} required />
                             </div>
                         </div>
 
-                        {/* 11. Ville */}
                         <div className="form-group">
                             <label htmlFor="city">Ville</label>
-                            <input
-                                type="text"
-                                name="city"
-                                id="city"
-                                className="input-field"
-                                value={formData.city}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="city" id="city" className="input-field" value={formData.city} onChange={handleChange} required />
                         </div>
 
-                        {/* 12. Mobile */}
                         <div className="form-group">
-                            <label htmlFor="mobile">Mobile/gsm/Portable</label>
+                            <label htmlFor="mobile">Mobile / GSM / Portable</label>
                             <input
-                                type="tel"
+                                type="text"
                                 name="mobile"
                                 id="mobile"
                                 className="input-field"
                                 value={formData.mobile}
                                 onChange={handleChange}
+                                placeholder={getMobilePlaceholder(formData.country)}
                                 required
                             />
                         </div>
 
-                        {/* 13. Métier */}
                         <div className="form-group">
                             <label htmlFor="job">Métier</label>
-                            <select
-                                name="job"
-                                id="job"
-                                className="input-field"
-                                value={formData.job}
-                                onChange={handleChange}
-                                required
-                            >
+                            <select name="job" id="job" className="input-field" value={formData.job} onChange={handleChange} required>
                                 <option value="">Séléctionner un métier</option>
                                 {JOBS.map((job, idx) => (
                                     <option key={idx} value={job}>{job}</option>
@@ -441,120 +350,66 @@ const RegisterPage = () => {
                         {formData.job === 'Autre' && (
                             <div className="form-group">
                                 <label htmlFor="customJob">Indiquez votre métier</label>
-                                <input
-                                    type="text"
-                                    name="customJob"
-                                    id="customJob"
-                                    className="input-field"
-                                    value={formData.customJob}
-                                    onChange={handleChange}
-                                    required
-                                />
+                                <input type="text" name="customJob" id="customJob" className="input-field" value={formData.customJob} onChange={handleChange} required />
                             </div>
                         )}
 
-                        {/* 14. Statut TVA */}
                         <div className="form-group">
                             <label>Statut TVA</label>
                             <div style={{ display: 'flex', gap: '20px', marginTop: '10px', color: '#ccc' }}>
                                 <label className="radio-label">
-                                    <input
-                                        type="radio"
-                                        name="tva"
-                                        value="assujetti"
-                                        checked={formData.tva === 'assujetti'}
-                                        onChange={handleChange}
-                                        required
-                                    />
+                                    <input type="radio" name="tva" value="assujetti" checked={formData.tva === 'assujetti'} onChange={handleChange} required />
                                     <span style={{ marginLeft: '8px' }}>Assujetti à la TVA</span>
                                 </label>
                                 <label className="radio-label">
-                                    <input
-                                        type="radio"
-                                        name="tva"
-                                        value="non-assujetti"
-                                        checked={formData.tva === 'non-assujetti'}
-                                        onChange={handleChange}
-                                        required
-                                    />
+                                    <input type="radio" name="tva" value="non-assujetti" checked={formData.tva === 'non-assujetti'} onChange={handleChange} required />
                                     <span style={{ marginLeft: '8px' }}>Non Assujetti à la TVA</span>
                                 </label>
                             </div>
                         </div>
 
-                        {/* 15. Conditional Business Fields */}
                         {formData.tva && (
                             <>
-                                {/* Business ID (always visible if tva selected) */}
                                 <div className="form-group">
                                     <label htmlFor="businessId">{currentCountry.businessLabel}</label>
-                                    <input
-                                        type="text"
-                                        name="businessId"
-                                        id="businessId"
-                                        className="input-field"
-                                        value={formData.businessId}
-                                        onChange={handleChange}
-                                    />
+                                    <input type="text" name="businessId" id="businessId" className="input-field" value={formData.businessId} onChange={handleChange} />
                                 </div>
 
-                                {/* QUEBEC Specific Fields */}
                                 {currentCountry.isQuebec && formData.tva === 'assujetti' && (
                                     <>
                                         <div className="form-group">
                                             <label htmlFor="tvq">TVQ / QST</label>
-                                            <input
-                                                type="text"
-                                                name="tvq"
-                                                id="tvq"
-                                                className="input-field"
-                                                value={formData.tvq}
-                                                onChange={handleChange}
-                                            />
-                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>
-                                                Format : 10 chiffres + TQ0001
-                                            </small>
+                                            <input type="text" name="tvq" id="tvq" className="input-field" value={formData.tvq} onChange={handleChange} />
+                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>Format : 10 chiffres + TQ0001</small>
                                         </div>
                                         <div className="form-group">
                                             <label htmlFor="tps">TPS / GST (optionnel)</label>
-                                            <input
-                                                type="text"
-                                                name="tps"
-                                                id="tps"
-                                                className="input-field"
-                                                value={formData.tps}
-                                                onChange={handleChange}
-                                            />
-                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>
-                                                Numéro TPS fédéral (obligatoire uniquement si votre CA dépasse 30 000 $)
-                                            </small>
+                                            <input type="text" name="tps" id="tps" className="input-field" value={formData.tps} onChange={handleChange} />
+                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>Numéro TPS fédéral (obligatoire uniquement si votre CA dépasse 30 000 $)</small>
                                         </div>
                                     </>
                                 )}
 
-                                {/* OTHER COUNTRIES TVA Intra */}
                                 {!currentCountry.isQuebec && formData.tva === 'assujetti' && currentCountry.tvaLabel && (
                                     <div className="form-group">
                                         <label htmlFor="tvaIntra">{currentCountry.tvaLabel}</label>
-                                        <input
-                                            type="text"
-                                            name="tvaIntra"
-                                            id="tvaIntra"
-                                            className="input-field"
-                                            value={formData.tvaIntra}
-                                            onChange={handleChange}
-                                        />
+                                        <input type="text" name="tvaIntra" id="tvaIntra" className="input-field" value={formData.tvaIntra} onChange={handleChange} />
                                         {currentCountry.tvaHint && (
-                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>
-                                                {currentCountry.tvaHint}
-                                            </small>
+                                            <small style={{ display: 'block', marginTop: '5px', color: '#888', fontStyle: 'italic' }}>{currentCountry.tvaHint}</small>
                                         )}
                                     </div>
                                 )}
                             </>
                         )}
 
-                        <button type="submit" className="btn btn-primary login-btn">CONTINUER</button>
+                        <button type="submit" className="btn btn-primary login-btn" disabled={isVerifying}>
+                            {isVerifying ? (
+                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                    <span className="spinner-border" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></span>
+                                    VÉRIFICATION EN COURS...
+                                </span>
+                            ) : "CONTINUER"}
+                        </button>
                     </form>
 
                     <div className="login-links">
@@ -565,7 +420,7 @@ const RegisterPage = () => {
                         <div className="link-row-center mt-3">
                             <Link to="/" className="text-orange">← Retour à l'accueil</Link>
                             <span className="separator">|</span>
-                            <a href="#" className="text-orange">Mentions légales</a>
+                            <span className="text-orange">Mentions légales</span>
                         </div>
                     </div>
                 </div>
