@@ -1,0 +1,30 @@
+# Définition des services à déployer sur Render
+services:
+  # 1. Configuration du Frontend (PWA - Static Site)
+  - type: static
+    name: artisanflo-appli
+    branch: main
+    # Le Root Directory doit pointer vers le dossier qui contient le package.json (frontend/)
+    rootDir: frontend
+    # La commande de construction (sans le préfixe 'frontend/')
+    buildCommand: 'npm install && npm run build'
+    # Le Publish Directory doit être relatif au RootDir ('frontend'), donc seulement 'dist'
+    publishPath: dist
+    pullRequest:
+      autoDeploy: false
+      
+  # 2. Configuration du Backend (Web Service - Python)
+  - type: web
+    name: artisanflo-backend-dev
+    branch: main
+    runtime: python
+    # Le Root Directory pour le serveur Python
+    rootDir: backend
+    # Commande de construction corrigée (sans le 'cd' car rootDir est déjà 'backend')
+    buildCommand: 'pip install -r requirements.txt'
+    # Commande de démarrage
+    startCommand: 'gunicorn server:app'
+    envVars:
+      # Render détectera le reste des variables secrètes que j'ai déjà configurées dans l'interface.
+      - key: PYTHON_VERSION
+        value: 3.11.9
