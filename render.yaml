@@ -4,12 +4,14 @@ services:
   - type: static
     name: artisanflo-appli
     branch: main
-    # Le Root Directory doit pointer vers le dossier qui contient le package.json (frontend/)
-    rootDir: frontend
-    # La commande de construction (sans le préfixe 'frontend/')
-    buildCommand: 'npm install && npm run build'
-    # Le Publish Directory doit être relatif au RootDir ('frontend'), donc seulement 'dist'
-    publishPath: dist
+    # RootDir supprimé pour utiliser des chemins absolus
+    # rootDir: frontend
+    
+    # Commande de construction avec changement de répertoire explicite
+    buildCommand: 'cd frontend && npm install && npm run build'
+    
+    # Chemin de publication complet
+    publishPath: frontend/dist
     # Règle de réécriture pour PWA/SPA (Redirige tout vers index.html)
     routes:
       - type: rewrite
