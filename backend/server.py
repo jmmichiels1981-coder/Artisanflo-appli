@@ -12,12 +12,21 @@ if not os.path.exists(env_path):
 load_dotenv(env_path)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+# CORS Configuration
+cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
+cors_origins = [origin.strip() for origin in cors_origins]
+CORS(app, origins=cors_origins)
 
 # MongoDB Connection
-mongo_uri = os.getenv('MONGODB_URI')
+# Render uses MONGO_URL, but we fallback to MONGODB_URI for local dev if needed
+mongo_uri = os.getenv('MONGO_URL') or os.getenv('MONGODB_URI')
+if not mongo_uri:
+    print("Warning: MONGO_URL not found")
+    
 client = MongoClient(mongo_uri)
-db = client.get_database('artisanflow') # the URI defaults to this, but good to be explicit
+db_name = os.getenv('DB_NAME', 'artisanflow') # Use DB_NAME from env if available
+db = client.get_database(db_name)
 users_collection = db.users
 
 @app.route('/api/health', methods=['GET'])
