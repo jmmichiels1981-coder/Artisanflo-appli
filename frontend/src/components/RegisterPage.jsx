@@ -188,25 +188,21 @@ const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (validateForm()) {
-            // Check if we need to verify VAT
-            // We only verify if: 
-            // 1. User is liable (Assujetti)
-            // 2. Country is supported by backend (EU + UK)
 
-            const currentCountryVal = getCountryConfig().value;
-            const supportedCountries = ['France', 'Belgique', 'Luxembourg', 'Espagne', 'Italie', 'Allemagne', 'Royaume-Unis'];
-            const needsVerification = formData.tva === 'assujetti' && supportedCountries.includes(currentCountryVal);
-
-            if (!needsVerification) {
-                // Skip verification for non-assujetti or non-supported countries (Suisse, Quebec, USA)
-                navigate('/register/payment', { state: { formData } });
-                return;
+            // Determine which ID to check
+            let idToCheck = formData.tvaIntra;
+            if (formData.tva === 'non-assujetti') {
+                idToCheck = formData.businessId;
             }
 
-            // If we are here, we MUST have a tvaIntra to verify
-            const idToCheck = formData.tvaIntra;
-            if (!idToCheck) {
+            // Validation of presence
+            if (formData.tva === 'assujetti' && !idToCheck) {
                 alert("Veuillez renseigner votre numéro de TVA.");
+                return;
+            }
+            if (formData.tva === 'non-assujetti' && !idToCheck && formData.country !== 'Etats-Unis') {
+                // Check if businessId is present for non-US
+                alert("Veuillez renseigner votre numéro d'entreprise.");
                 return;
             }
 
@@ -217,7 +213,8 @@ const RegisterPage = () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         country: formData.country,
-                        vatNumber: idToCheck
+                        vatNumber: idToCheck,
+                        tvaStatus: formData.tva
                     })
                 });
 
@@ -226,8 +223,7 @@ const RegisterPage = () => {
                 if (result.valid) {
                     navigate('/register/payment', { state: { formData } });
                 } else {
-                    // Fail based on validation result
-                    alert(result.message || "Vérification de TVA échouée.");
+                    alert(result.message || "Vérification échouée.");
                 }
 
             } catch (err) {
