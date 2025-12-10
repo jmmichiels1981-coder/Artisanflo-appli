@@ -3,6 +3,9 @@ from flask_cors import CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+import requests
+import hashlib
+import sys
 
 # Load environment variables
 env_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -128,74 +131,58 @@ def register():
 def verify_vat():
     try:
         import time
-        import requests
-        
+        from stdnum.eu import vat as eu_vat
+        from stdnum.gb import vat as gb_vat
+        from stdnum.exceptions import InvalidChecksum, InvalidFormat, InvalidComponent
+
         data = request.json
         country = data.get('country')
         vat_number = data.get('vatNumber')
         
-        # Normalize VAT Number (remove country code if present)
-        # Assuming format like "FR12345678901" or just number
+        if not vat_number:
+             return jsonify({"valid": False, "message": "Numéro de TVA manquant"}), 200
+
+        # Normalize VAT Number (remove spaces, dots, dashes, uppercase)
         clean_vat = vat_number.replace(' ', '').replace('.', '').replace('-', '').upper()
         
         # Logic for EU (VIES) vs UK
         is_uk = "Royaume-Uni" in country or "UK" in country or "GB" in country
         
         if is_uk:
-             # UK Verification using provided Token (Mock implementation of robust check)
-             # Ideally call HMRC API here
-             token = os.getenv('UK_VAT_TOKEN')
-             if not token:
-                 print("Warning: UK_VAT_TOKEN missing")
+             # UK Verification (Strict Checksum)
+             if not gb_vat.is_valid(clean_vat):
+                 return jsonify({"valid": False, "message": "Numéro TVA UK invalide (Format/Checksum incorrect)"}), 200
              
-             # Mock Check for UK
-             # Return valid for everything except "00000" for demo
-             if "00000" in clean_vat:
-                 return jsonify({"valid": False, "message": "Numéro TVA UK invalide (Test)"}), 200
-             return jsonify({"valid": True, "message": "TVA UK Validée"}), 200
+             # Stdnum does not provide online UK check without API, so we rely on checksum as per plan.
+             return jsonify({"valid": True, "message": "TVA UK Validée (Format OK)"}), 200
 
         else:
             # EU VIES Verification
-            # Extract County Code and Number
-            # Simple heuristic: First 2 letters = Country Code, rest = Number
-            if len(clean_vat) > 2 and clean_vat[:2].isalpha():
-                country_code = clean_vat[:2]
-                number = clean_vat[2:]
-            else:
-                # Default mapping based on Country Name if VAT doesn't have prefix
-                # (Simplified map for demo)
-                country_map = {'France': 'FR', 'Belgique': 'BE', 'Italie': 'IT', 'Espagne': 'ES', 'Allemagne': 'DE'}
-                # Find code from map or default to FR
-                found_code = next((v for k, v in country_map.items() if k in country), 'FR')
-                country_code = found_code
-                number = clean_vat
-            
-            # Call VIES REST API
+            # 1. Check Format first
             try:
-                vies_url = f"https://ec.europa.eu/taxation_customs/vies/rest-api/ms/{country_code}/vat/{number}"
-                response = requests.get(vies_url, timeout=5)
-                
-                if response.status_code == 200:
-                    vies_data = response.json()
-                    if vies_data.get('isValid'):
-                        return jsonify({"valid": True, "message": f"TVA Validée ({vies_data.get('name', '')})"}), 200
-                    else:
-                         return jsonify({"valid": False, "message": "Numéro de TVA non valide (VIES)"}), 200
-                else:
-                    # Fallback if VIES is down or error
-                    print(f"VIES Error {response.status_code}: {response.text}")
-                    # For demo allow pass if VIES down? Or fail?
-                    # Let's return valid for test if not "00000"
-                    if "00000" in number: return jsonify({"valid": False, "message": "Invalide (Simulé)"}), 200
-                    return jsonify({"valid": True, "message": "Vérification VIES indisponible, validé temporairement"}), 200
+                # Validate format and checksum locally first
+                if not eu_vat.is_valid(clean_vat):
+                     return jsonify({"valid": False, "message": "Format TVA invalide pour l'UE"}), 200
 
-            except Exception as vies_err:
-                print(f"VIES Exception: {vies_err}")
-                return jsonify({"valid": True, "message": "Erreur VIES, validé temporairement"}), 200
+                # 2. Check VIES Online
+                # Note: check_vies returns a dict with 'valid': True/False and name/address
+                # It raises exceptions if connection fails.
+                vies_result = eu_vat.check_vies(clean_vat)
+                
+                if vies_result['valid']:
+                    name = vies_result['name'] or 'Inconnu'
+                    return jsonify({"valid": True, "message": f"TVA Validée via VIES ({name})"}), 200
+                else:
+                    return jsonify({"valid": False, "message": "Numéro de TVA non valide selon VIES"}), 200
+
+            except Exception as e:
+                # STRICT MODE: If VIES fails (timeout, connection error), we FAIL.
+                print(f"VIES Check fail/error: {e}")
+                return jsonify({"valid": False, "message": "Vérification VIES impossible ou échouée. Impossible de valider la TVA."}), 200
 
     except Exception as e:
         print(f"Error in verify-vat: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"valid": False, "message": f"Erreur serveur lors de la vérification : {str(e)}"}), 200
 
 import stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')

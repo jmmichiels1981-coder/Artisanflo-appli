@@ -6,3 +6,5 @@ bcrypt
 gunicorn
 requests
 stripe
+python-stdnum
+zeep
