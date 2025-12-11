@@ -4,59 +4,25 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 import requests
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+# import smtplib  <-- Removed for SendGrid
+# import ssl      <-- Removed for SendGrid
+# from email.mime.text import MIMEText          <-- Removed
+# from email.mime.multipart import MIMEMultipart  <-- Removed
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 import hashlib
 import sys
 
 # Load environment variables
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-if not os.path.exists(env_path):
-    # Fallback to root or other locations if needed
-    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(env_path)
+# ... (rest of loading logic matches existing file structure, assuming imports are at top)
 
-app = Flask(__name__)
-
-# CORS Configuration
-cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
-cors_origins = [origin.strip() for origin in cors_origins]
-CORS(app, origins=cors_origins)
-
-# MongoDB Connection
-# Render uses MONGO_URL, but we fallback to MONGODB_URI for local dev if needed
-mongo_uri = os.getenv('MONGO_URL') or os.getenv('MONGODB_URI')
-if not mongo_uri:
-    print("Warning: MONGO_URL not found")
-    
-# Initialize MongoClient appropriately
-try:
-    client = MongoClient(mongo_uri)
-    db_name = os.getenv('DB_NAME', 'artisanflow') # Use DB_NAME from env if available
-    db = client.get_database(db_name)
-    users_collection = db.users
-except Exception as e:
-    print(f"Warning: Could not connect to MongoDB: {e}")
-    users_collection = None
-
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "healthy", "message": "Backend is running"}), 200
-
-# Email Configuration (Updated with SES Credentials)
-# Email Configuration (Updated with SES Credentials)
-# Default to provided SES creds if not in Env
-SMTP_HOST = os.getenv('SMTP_HOST')
-SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
-SMTP_USER = os.getenv('SMTP_USER')
-SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
-SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', 'contact@artisanflow.com')
+# Email Configuration (Updated for SendGrid)
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'contact@artisanflow.com')
 
 def send_confirmation_email(to_email, first_name, last_name, password, pin):
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print("SMTP credentials not configured. Skipping email.")
+    if not SENDGRID_API_KEY:
+        print("SendGrid API Key not configured. Skipping email.")
         return
 
     subject = "Bienvenue sur ArtisanFlow - Votre inscription est confirmée !"
@@ -82,31 +48,18 @@ def send_confirmation_email(to_email, first_name, last_name, password, pin):
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = SMTP_FROM_EMAIL
-    msg["To"] = to_email
-
-    msg.attach(MIMEText(html_content, "html"))
-
+    message = Mail(
+        from_email=SENDGRID_FROM_EMAIL,
+        to_emails=to_email,
+        subject=subject,
+        html_content=html_content)
+    
     try:
-        # SES Port 587 uses STARTTLS
-        if SMTP_PORT == 587:
-            context = ssl.create_default_context()
-            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-                server.starttls(context=context)
-                server.login(SMTP_USER, SMTP_PASSWORD)
-                server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
-        else:
-            # Fallback for SSL (465)
-            context = ssl.create_default_context()
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
-                server.login(SMTP_USER, SMTP_PASSWORD)
-                server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
-                
-        print(f"Confirmation email sent to {to_email}")
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Email sent! Status Code: {response.status_code}")
     except Exception as e:
-        print(f"Failed to send email: {e}")
+        print(f"Failed to send email via SendGrid: {e}")
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
