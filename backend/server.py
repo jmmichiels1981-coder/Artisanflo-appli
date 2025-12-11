@@ -444,7 +444,7 @@ def contact_support():
         
         message = Mail(
             from_email=SENDGRID_FROM_EMAIL,
-            to_emails='sav@artisanflo-appli.com',
+            to_emails='sav@artisanflow-appli.com',
             subject=full_subject,
             html_content=content
         )
