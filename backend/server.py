@@ -4,20 +4,55 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 import requests
-# ... (imports)
 import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import hashlib
+import sys
 
-# ... (env loading)
+# Load environment variables
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+if not os.path.exists(env_path):
+    # Fallback to root or other locations if needed
+    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(env_path)
 
-# Email Configuration
-SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-SMTP_PORT = int(os.getenv('SMTP_PORT', 465))
+app = Flask(__name__)
+
+# CORS Configuration
+cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
+cors_origins = [origin.strip() for origin in cors_origins]
+CORS(app, origins=cors_origins)
+
+# MongoDB Connection
+# Render uses MONGO_URL, but we fallback to MONGODB_URI for local dev if needed
+mongo_uri = os.getenv('MONGO_URL') or os.getenv('MONGODB_URI')
+if not mongo_uri:
+    print("Warning: MONGO_URL not found")
+    
+# Initialize MongoClient appropriately
+try:
+    client = MongoClient(mongo_uri)
+    db_name = os.getenv('DB_NAME', 'artisanflow') # Use DB_NAME from env if available
+    db = client.get_database(db_name)
+    users_collection = db.users
+except Exception as e:
+    print(f"Warning: Could not connect to MongoDB: {e}")
+    users_collection = None
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "message": "Backend is running"}), 200
+
+# Email Configuration (Updated with SES Credentials)
+# Email Configuration (Updated with SES Credentials)
+# Default to provided SES creds if not in Env
+SMTP_HOST = os.getenv('SMTP_HOST')
+SMTP_PORT = int(os.getenv('SMTP_PORT', 587))
 SMTP_USER = os.getenv('SMTP_USER')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
-SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', SMTP_USER)
+SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', 'contact@artisanflow.com')
 
 def send_confirmation_email(to_email, first_name, last_name, password, pin):
     if not SMTP_USER or not SMTP_PASSWORD:
@@ -55,10 +90,20 @@ def send_confirmation_email(to_email, first_name, last_name, password, pin):
     msg.attach(MIMEText(html_content, "html"))
 
     try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+        # SES Port 587 uses STARTTLS
+        if SMTP_PORT == 587:
+            context = ssl.create_default_context()
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls(context=context)
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+        else:
+            # Fallback for SSL (465)
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+                
         print(f"Confirmation email sent to {to_email}")
     except Exception as e:
         print(f"Failed to send email: {e}")
@@ -77,8 +122,9 @@ def register():
                pass # relaxing check for now as we just want to store "inscriptions"
         
         # Check if user already exists
-        if 'email' in data and users_collection.find_one({"email": data['email']}):
-             return jsonify({"error": "User already exists"}), 409
+        if users_collection:
+            if 'email' in data and users_collection.find_one({"email": data['email']}):
+                return jsonify({"error": "User already exists"}), 409
 
         # Ensure payment fingerprint is saved
         if 'paymentIdentifier' in data and 'payment_fingerprint' not in data:
@@ -135,10 +181,13 @@ def register():
                 return jsonify({"error": f"Erreur Stripe: {str(stripe_err)}"}), 400
 
         # Insert into MongoDB
-        result = users_collection.insert_one(data)
+        result_id = "mock_id_if_no_db"
+        if users_collection:
+            result = users_collection.insert_one(data)
+            result_id = str(result.inserted_id)
         
         # Convert ObjectId to string for response
-        data['_id'] = str(result.inserted_id)
+        data['_id'] = result_id
         
         # SEND CONFIRMATION EMAIL
         # Warning: Sending raw password/pin is insecure but requested by user
@@ -278,7 +327,7 @@ def verify_payment():
             return jsonify({"valid": True, "message": "Erreur hash, validé par défaut"}), 200
 
         # Check DB for this fingerprint
-        if fingerprint:
+        if fingerprint and users_collection:
              # Check both users collection (legacy) or any other place
              # For now just users
             existing = users_collection.find_one({"payment_fingerprint": fingerprint})
