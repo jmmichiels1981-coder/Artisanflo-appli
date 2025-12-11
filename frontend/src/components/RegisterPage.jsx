@@ -484,18 +484,25 @@ const RegisterPage = () => {
                                 <span className="separator">|</span>
                                 <span className="text-orange">Mentions légales</span>
                                 <span className="separator">|</span>
-                                <button
-                                    type="button"
-                                    className="text-orange"
-                                    style={{
-                                        background: 'none', border: 'none', padding: 0,
-                                        cursor: 'pointer', font: 'inherit', textDecoration: 'underline',
-                                        position: 'relative', zIndex: 10
-                                    }}
-                                    onClick={() => { console.log('Contact Clicked'); setShowContactModal(true); }}
-                                >
-                                    Contact
-                                </button>
+                                <div style={{ position: 'relative', zIndex: 50 }}>
+                                    <button
+                                        type="button"
+                                        className="text-orange"
+                                        style={{
+                                            background: 'none', border: 'none', padding: '5px',
+                                            cursor: 'pointer', font: 'inherit', textDecoration: 'underline',
+                                            pointerEvents: 'auto'
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            console.log('Contact Clicked');
+                                            // alert('Debug: Contact Clicked'); // Uncomment if needed, but let's trust the modal
+                                            setShowContactModal(true);
+                                        }}
+                                    >
+                                        Contact
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
