@@ -9,3 +9,4 @@ stripe
 python-stdnum
 zeep
 sendgrid
+PyJWT

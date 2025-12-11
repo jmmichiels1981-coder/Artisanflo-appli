@@ -28,7 +28,9 @@ const AdminLoginPage = () => {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                // alert("Connexion Admin réussie !"); // Optional: remove alert for smoother UX or keep it
+                if (data.token) {
+                    localStorage.setItem('adminToken', data.token);
+                }
                 navigate('/admin/dashboard');
                 console.log("Admin Logged In");
             } else {
