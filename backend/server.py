@@ -135,7 +135,8 @@ def register():
         stripe_customer_id = None
         stripe_payment_method_id = None
         
-        if 'cardData' in data:
+        # Check for cardData OR SEPA method
+        if 'cardData' in data or data.get('paymentMethod') == 'sepa':
             import stripe
             stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
             
@@ -166,7 +167,40 @@ def register():
                     data['stripe_customer_id'] = stripe_customer_id
                     # data['stripe_payment_method_id'] already set
                 
-                # LEGACY / TEST FLOW (Raw Data)
+                # SEPA FLOW (Raw IBAN)
+                elif data.get('paymentMethod') == 'sepa':
+                    print("Processing SEPA payment...")
+                    # 1. Create Customer
+                    customer = stripe.Customer.create(
+                        email=data.get('email'),
+                        name=f"{data.get('firstName')} {data.get('lastName')}",
+                        description=f"Client {data.get('companyName')}"
+                    )
+                    stripe_customer_id = customer.id
+                    
+                    # 2. Create PaymentMethod from IBAN
+                    # Note: collecting raw IBAN is sensitive, ensure HTTPS is used.
+                    pm = stripe.PaymentMethod.create(
+                        type="sepa_debit",
+                        sepa_debit={"iban": data.get('paymentIdentifier')},
+                        billing_details={
+                            "name": f"{data.get('firstName')} {data.get('lastName')}",
+                            "email": data.get('email')
+                        }
+                    )
+                    stripe_payment_method_id = pm.id
+                    
+                    # 3. Attach & Set Default
+                    stripe.PaymentMethod.attach(stripe_payment_method_id, customer=stripe_customer_id)
+                    stripe.Customer.modify(
+                        stripe_customer_id,
+                        invoice_settings={"default_payment_method": stripe_payment_method_id},
+                    )
+                    
+                    data['stripe_customer_id'] = stripe_customer_id
+                    data['stripe_payment_method_id'] = stripe_payment_method_id
+
+                # LEGACY / TEST FLOW (Raw Card Data)
                 elif 'cardData' in data:
                     # Check for Test Card (starts with 4242) to avoid "unsafe raw data" error
                     card_number = str(data['cardData']['number']).replace(' ', '')
