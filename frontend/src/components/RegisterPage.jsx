@@ -489,13 +489,14 @@ const RegisterPage = () => {
                             <span className="separator">|</span>
                             <span className="text-orange">Mentions légales</span>
                             <span className="separator">|</span>
-                            <a
-                                href="#"
+                            <button
+                                type="button"
                                 className="text-orange"
-                                onClick={(e) => { e.preventDefault(); setShowContactModal(true); }}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}
+                                onClick={() => setShowContactModal(true)}
                             >
                                 Contact
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
