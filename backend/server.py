@@ -122,7 +122,7 @@ def register():
                pass # relaxing check for now as we just want to store "inscriptions"
         
         # Check if user already exists
-        if users_collection:
+        if users_collection is not None:
             if 'email' in data and users_collection.find_one({"email": data['email']}):
                 return jsonify({"error": "User already exists"}), 409
 
@@ -182,7 +182,7 @@ def register():
 
         # Insert into MongoDB
         result_id = "mock_id_if_no_db"
-        if users_collection:
+        if users_collection is not None:
             result = users_collection.insert_one(data)
             result_id = str(result.inserted_id)
         
@@ -327,7 +327,7 @@ def verify_payment():
             return jsonify({"valid": True, "message": "Erreur hash, validé par défaut"}), 200
 
         # Check DB for this fingerprint
-        if fingerprint and users_collection:
+        if fingerprint and users_collection is not None:
              # Check both users collection (legacy) or any other place
              # For now just users
             existing = users_collection.find_one({"payment_fingerprint": fingerprint})
