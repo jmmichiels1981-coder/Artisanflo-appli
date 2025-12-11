@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './HomePage.css';
 import LanguageSelector from './LanguageSelector';
 
@@ -47,7 +47,7 @@ const HomePage = () => {
                         <div className="link-row mt-small">
                             <a href="#" className="text-orange">accès admin</a>
                             <span className="separator">|</span>
-                            <a href="#" className="text-orange">contact</a>
+                            <Link to="/contact" className="text-orange">contact</Link>
                             <span className="separator">|</span>
                             <a href="#" className="text-orange">mentions légales</a>
                         </div>
