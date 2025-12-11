@@ -140,64 +140,83 @@ def register():
             stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
             
             try:
-                # Check for Test Card (starts with 4242) to avoid "unsafe raw data" error
-                # In production, frontend should use Stripe Elements.
-                card_number = str(data['cardData']['number']).replace(' ', '')
-                is_test_card = card_number.startswith('4242')
-
-                if is_test_card:
-                    print("Test card detected. Using 'tok_visa'.")
-                    # For test cards, we use the token directly on customer creation
-                    customer = stripe.Customer.create(
-                        email=data.get('email'),
-                        name=f"{data.get('firstName')} {data.get('lastName')}",
-                        description=f"Client {data.get('companyName')}",
-                        source="tok_visa" # Magic token for test visa
-                    )
-                    stripe_customer_id = customer.id
-                    # With source=token, default payment method is set automatically
-                    # We can try to retrieve it if needed, or just proceed.
-                    stripe_payment_method_id = customer.default_source 
-                    
-                else:
-                    # Standard Flow (Will fail if raw data used in Prod/without PCI compliance)
-                    # 1. Create Customer
+                # STRIPE ELEMENTS FLOW (Production Ready)
+                if 'stripe_payment_method_id' in data:
+                     # 1. Create Customer
                     customer = stripe.Customer.create(
                         email=data.get('email'),
                         name=f"{data.get('firstName')} {data.get('lastName')}",
                         description=f"Client {data.get('companyName')}"
                     )
                     stripe_customer_id = customer.id
-                    
-                    # 2. Create Payment Method
-                    card_info = data['cardData']
-                    payment_method = stripe.PaymentMethod.create(
-                        type="card",
-                        card={
-                            "number": card_info['number'],
-                            "exp_month": card_info['exp_month'],
-                            "exp_year": card_info['exp_year'],
-                            "cvc": card_info['cvc'],
-                        },
-                    )
-                    stripe_payment_method_id = payment_method.id
-                    
-                    # 3. Attach to Customer
+                    stripe_payment_method_id = data['stripe_payment_method_id']
+
+                    # 2. Attach existing Payment Method (created on frontend) to Customer
                     stripe.PaymentMethod.attach(
                         stripe_payment_method_id,
                         customer=stripe_customer_id,
                     )
                     
-                    # 4. Set as Default
+                    # 3. Set as Default
                     stripe.Customer.modify(
                         stripe_customer_id,
                         invoice_settings={"default_payment_method": stripe_payment_method_id},
                     )
+                    
+                    data['stripe_customer_id'] = stripe_customer_id
+                    # data['stripe_payment_method_id'] already set
                 
-                data['stripe_customer_id'] = stripe_customer_id
-                data['stripe_payment_method_id'] = stripe_payment_method_id
-                
-            except Exception as stripe_err:
+                # LEGACY / TEST FLOW (Raw Data)
+                elif 'cardData' in data:
+                    # Check for Test Card (starts with 4242) to avoid "unsafe raw data" error
+                    card_number = str(data['cardData']['number']).replace(' ', '')
+                    is_test_card = card_number.startswith('4242')
+
+                    if is_test_card:
+                        print("Test card detected. Using 'tok_visa'.")
+                        # For test cards, we use the token directly on customer creation
+                        customer = stripe.Customer.create(
+                            email=data.get('email'),
+                            name=f"{data.get('firstName')} {data.get('lastName')}",
+                            description=f"Client {data.get('companyName')}",
+                            source="tok_visa" # Magic token for test visa
+                        )
+                        stripe_customer_id = customer.id
+                        stripe_payment_method_id = customer.default_source 
+                        
+                    else:
+                         # Attempt Raw Create (Will fail in Prod without PCI)
+                         # Useful for local dev if not using Elements
+                        customer = stripe.Customer.create(
+                            email=data.get('email'),
+                            name=f"{data.get('firstName')} {data.get('lastName')}",
+                            description=f"Client {data.get('companyName')}"
+                        )
+                        stripe_customer_id = customer.id
+                        
+                        card_info = data['cardData']
+                        payment_method = stripe.PaymentMethod.create(
+                            type="card",
+                            card={
+                                "number": card_info['number'],
+                                "exp_month": card_info['exp_month'],
+                                "exp_year": card_info['exp_year'],
+                                "cvc": card_info['cvc'],
+                            },
+                        )
+                        stripe_payment_method_id = payment_method.id
+                        
+                        stripe.PaymentMethod.attach(
+                            stripe_payment_method_id,
+                            customer=stripe_customer_id,
+                        )
+                        stripe.Customer.modify(
+                            stripe_customer_id,
+                            invoice_settings={"default_payment_method": stripe_payment_method_id},
+                        )
+                    
+                    data['stripe_customer_id'] = stripe_customer_id
+                    data['stripe_payment_method_id'] = stripe_payment_method_id
                 
             except Exception as stripe_err:
                 print(f"Stripe Error: {stripe_err}")
