@@ -222,6 +222,46 @@ def register():
                 print(f"Stripe Error: {stripe_err}")
                 return jsonify({"error": f"Erreur Stripe: {str(stripe_err)}"}), 400
 
+        # --- NEW: CREATE SUBSCRIPTION ---
+        stripe_subscription_id = None
+        if stripe_customer_id:
+            try:
+                country_str = data.get('country', '')
+                price_id = None
+
+                # Determine Price ID based on Country/Currency
+                # Note: These ENV variables must be set in Render
+                if any(c in country_str for c in ['France', 'Belgique', 'Luxembourg', 'Espagne', 'Italie', 'Allemagne']):
+                    price_id = os.getenv('STRIPE_PRICE_ID_EUR')
+                elif 'Suisse' in country_str:
+                    price_id = os.getenv('STRIPE_PRICE_ID_CHF')
+                elif 'Royaume-Uni' in country_str or 'UK' in country_str: # Matches Frontend "Royaume-Unis"
+                    price_id = os.getenv('STRIPE_PRICE_ID_GBP')
+                elif 'Etats-Unis' in country_str or 'USA' in country_str:
+                    price_id = os.getenv('STRIPE_PRICE_ID_USD')
+                elif 'Québec' in country_str or 'Canada' in country_str:
+                    price_id = os.getenv('STRIPE_PRICE_ID_CAD')
+                
+                if price_id:
+                    print(f"Creating subscription for {stripe_customer_id} with price {price_id}")
+                    subscription = stripe.Subscription.create(
+                        customer=stripe_customer_id,
+                        items=[{'price': price_id}],
+                        expand=['latest_invoice.payment_intent'],
+                    )
+                    stripe_subscription_id = subscription.id
+                    data['stripe_subscription_id'] = stripe_subscription_id
+                    data['subscription_status'] = subscription.status
+                else:
+                    print(f"Warning: No Price ID found for country '{country_str}'. Subscription skipped.")
+
+            except Exception as sub_err:
+                print(f"Subscription Error: {sub_err}")
+                # We do NOT block registration here, but we log the error.
+                # The user will exist in Stripe but have no subscription.
+                # Ideally, we should maybe return a warning or alert admin.
+
+
         # Insert into MongoDB
         result_id = "mock_id_if_no_db"
         if users_collection is not None:
@@ -244,7 +284,8 @@ def register():
         return jsonify({
             "message": "User registered successfully", 
             "user": data,
-            "stripe_customer_id": stripe_customer_id
+            "stripe_customer_id": stripe_customer_id,
+            "stripe_subscription_id": stripe_subscription_id
         }), 201
 
     except Exception as e:
