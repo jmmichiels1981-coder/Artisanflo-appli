@@ -278,14 +278,23 @@ def register():
                 
                 if price_id:
                     print(f"Creating subscription for {stripe_customer_id} with price {price_id}")
+                    
+                    # FREE TRIAL UNTIL 31/08/2026
+                    # Timestamp for August 31, 2026 23:59:59 UTC
+                    from datetime import datetime, timezone
+                    trial_end_dt = datetime(2026, 8, 31, 23, 59, 59, tzinfo=timezone.utc)
+                    trial_end_ts = int(trial_end_dt.timestamp())
+
                     subscription = stripe.Subscription.create(
                         customer=stripe_customer_id,
                         items=[{'price': price_id}],
+                        trial_end=trial_end_ts,
                         expand=['latest_invoice.payment_intent'],
                     )
                     stripe_subscription_id = subscription.id
                     data['stripe_subscription_id'] = stripe_subscription_id
                     data['subscription_status'] = subscription.status
+                    data['trial_end'] = trial_end_ts
                 else:
                     print(f"Warning: No Price ID found for country '{country_str}'. Subscription skipped.")
 
