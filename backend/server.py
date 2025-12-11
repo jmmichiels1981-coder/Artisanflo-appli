@@ -18,7 +18,7 @@ import sys
 
 # Email Configuration (Updated for SendGrid)
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
-SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'contact@artisanflow.com')
+SENDGRID_FROM_EMAIL = os.getenv('SENDGRID_FROM_EMAIL', 'sav@artisanflo-appli.com')
 
 def send_confirmation_email(to_email, first_name, last_name, password, pin):
     if not SENDGRID_API_KEY:
