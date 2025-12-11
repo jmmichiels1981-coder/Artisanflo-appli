@@ -459,6 +459,38 @@ def contact_support():
         print(f"Contact error: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/auth/admin-login', methods=['POST'])
+def admin_login():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"success": False, "message": "Données manquantes"}), 400
+
+        email = data.get('email')
+        password = data.get('password')
+        pin = data.get('pin')
+
+        # Hardcoded credentials as requested
+        ADMIN_EMAIL = "sav@artisanflow-appli.com"
+        ADMIN_PASSWORD = "Airwave_1981"
+        ADMIN_PIN = "3030"
+
+        if email == ADMIN_EMAIL and password == ADMIN_PASSWORD and pin == ADMIN_PIN:
+            # Succès
+            return jsonify({"success": True, "message": "Connexion réussie"}), 200
+        elif email != ADMIN_EMAIL:
+             return jsonify({"success": False, "message": "Email non reconnu"}), 401
+        elif password != ADMIN_PASSWORD:
+             return jsonify({"success": False, "message": "Mot de passe incorrect"}), 401
+        elif pin != ADMIN_PIN:
+             return jsonify({"success": False, "message": "Code PIN incorrect"}), 401
+        else:
+            return jsonify({"success": False, "message": "Identifiants incorrects"}), 401
+
+    except Exception as e:
+        print(f"Admin login error: {e}")
+        return jsonify({"success": False, "message": "Erreur serveur"}), 500
+
 import stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 

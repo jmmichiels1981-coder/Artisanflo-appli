@@ -45,7 +45,7 @@ const HomePage = () => {
 
                     <div className="login-links">
                         <div className="link-row mt-small">
-                            <a href="#" className="text-orange">accès admin</a>
+                            <Link to="/admin/login" className="text-orange">accès admin</Link>
                             <span className="separator">|</span>
                             <Link to="/contact" className="text-orange">contact</Link>
                             <span className="separator">|</span>
