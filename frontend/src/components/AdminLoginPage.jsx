@@ -28,9 +28,8 @@ const AdminLoginPage = () => {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                alert("Connexion Admin réussie !");
-                // navigate('/admin/dashboard'); 
-                // For now, since dashboard doesn't exist, just stay or redirect to home with a log
+                // alert("Connexion Admin réussie !"); // Optional: remove alert for smoother UX or keep it
+                navigate('/admin/dashboard');
                 console.log("Admin Logged In");
             } else {
                 alert(data.message || "Identifiants incorrects");

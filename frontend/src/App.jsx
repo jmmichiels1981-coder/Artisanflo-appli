@@ -6,6 +6,7 @@ import RegisterPage from './components/RegisterPage';
 import PaymentPage from './components/PaymentPage';
 import ContactPage from './components/ContactPage';
 import AdminLoginPage from './components/AdminLoginPage';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/register/payment" element={<PaymentPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );
