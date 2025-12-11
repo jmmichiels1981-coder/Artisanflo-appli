@@ -407,6 +407,58 @@ def verify_vat():
         print(f"Error in verify-vat: {e}")
         return jsonify({"valid": False, "message": f"Erreur serveur : {str(e)}"}), 200
 
+@app.route('/api/auth/contact', methods=['POST'])
+def contact_support():
+    try:
+        data = request.json
+        if not data:
+             return jsonify({"error": "No data"}), 400
+
+        name = data.get('name')
+        email = data.get('email')
+        subject = data.get('subject')
+        message_body = data.get('message')
+
+        if not all([name, email, subject, message_body]):
+             return jsonify({"error": "Missing fields"}), 400
+
+        # Send Email to Support
+        full_subject = f"[Contact Form] {subject}"
+        content = f"""
+        <html>
+            <body>
+                <h3>Nouveau message de contact</h3>
+                <p><strong>Nom:</strong> {name}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Sujet:</strong> {subject}</p>
+                <hr>
+                <p>{message_body.replace(chr(10), '<br>')}</p>
+            </body>
+        </html>
+        """
+        
+        # We send TO the support email (sav@artisanflo-appli.com)
+        # We set Reply-To as the user's email
+        
+        # Note: SENDGRID_FROM_EMAIL is 'sav@artisanflo-appli.com' (the verified sender)
+        
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails='sav@artisanflo-appli.com',
+            subject=full_subject,
+            html_content=content
+        )
+        message.reply_to = email
+
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        sg.send(message)
+        
+        return jsonify({"message": "Message sent"}), 200
+
+    except Exception as e:
+        print(f"Contact error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 import stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 
