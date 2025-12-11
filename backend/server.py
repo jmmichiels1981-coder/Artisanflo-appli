@@ -4,37 +4,64 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 import requests
-import hashlib
-import sys
+# ... (imports)
+import smtplib
+import ssl
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
-# Load environment variables
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-if not os.path.exists(env_path):
-    # Fallback to root or other locations if needed
-    env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
-load_dotenv(env_path)
+# ... (env loading)
 
-app = Flask(__name__)
+# Email Configuration
+SMTP_HOST = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.getenv('SMTP_PORT', 465))
+SMTP_USER = os.getenv('SMTP_USER')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD')
+SMTP_FROM_EMAIL = os.getenv('SMTP_FROM_EMAIL', SMTP_USER)
 
-# CORS Configuration
-cors_origins = os.getenv('CORS_ORIGINS', '*').split(',')
-cors_origins = [origin.strip() for origin in cors_origins]
-CORS(app, origins=cors_origins)
+def send_confirmation_email(to_email, first_name, last_name, password, pin):
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print("SMTP credentials not configured. Skipping email.")
+        return
 
-# MongoDB Connection
-# Render uses MONGO_URL, but we fallback to MONGODB_URI for local dev if needed
-mongo_uri = os.getenv('MONGO_URL') or os.getenv('MONGODB_URI')
-if not mongo_uri:
-    print("Warning: MONGO_URL not found")
+    subject = "Bienvenue sur ArtisanFlow - Votre inscription est confirmée !"
     
-client = MongoClient(mongo_uri)
-db_name = os.getenv('DB_NAME', 'artisanflow') # Use DB_NAME from env if available
-db = client.get_database(db_name)
-users_collection = db.users
+    html_content = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #E85D04;">Bienvenue {first_name} {last_name} !</h2>
+        <p>Votre compte ArtisanFlow a été créé avec succès.</p>
+        <p>Vous pouvez dès à présent vous connecter et commencer à gérer votre activité.</p>
+        
+        <div style="background-color: #f9f9f9; padding: 15px; border-left: 5px solid #E85D04; margin: 20px 0;">
+            <h3>Vos identifiants de connexion :</h3>
+            <p><strong>Email :</strong> {to_email}</p>
+            <p><strong>Mot de passe :</strong> {password}</p>
+            <p><strong>Code PIN :</strong> {pin}</p>
+        </div>
+        
+        <p><em>Note : Pour votre sécurité, nous vous recommandons de ne pas partager ces informations.</em></p>
+        
+        <p>À bientôt sur <a href="https://artisanflow.com" style="color: #E85D04;">ArtisanFlow</a> !</p>
+      </body>
+    </html>
+    """
 
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "healthy", "message": "Backend is running"}), 200
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = SMTP_FROM_EMAIL
+    msg["To"] = to_email
+
+    msg.attach(MIMEText(html_content, "html"))
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_FROM_EMAIL, to_email, msg.as_string())
+        print(f"Confirmation email sent to {to_email}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 @app.route('/api/auth/register', methods=['POST'])
 def register():
@@ -113,15 +140,21 @@ def register():
         # Convert ObjectId to string for response
         data['_id'] = str(result.inserted_id)
         
+        # SEND CONFIRMATION EMAIL
+        # Warning: Sending raw password/pin is insecure but requested by user
+        send_confirmation_email(
+            data.get('email'),
+            data.get('firstName', ''),
+            data.get('lastName', ''),
+            data.get('password', ''),
+            data.get('pin', '')
+        )
+
         return jsonify({
             "message": "User registered successfully", 
             "user": data,
             "stripe_customer_id": stripe_customer_id
         }), 201
-
-    except Exception as e:
-        print(f"Error in register: {e}")
-        return jsonify({"error": str(e)}), 500
 
     except Exception as e:
         print(f"Error in register: {e}")

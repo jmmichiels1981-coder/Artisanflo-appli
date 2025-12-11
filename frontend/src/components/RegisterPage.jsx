@@ -123,7 +123,10 @@ const RegisterPage = () => {
         tps: ''
     });
 
+    // ... (imports remain)
+
     const [isVerifying, setIsVerifying] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     const validateForm = () => {
         if (!formData.lastName || !formData.firstName || !formData.email || !formData.password ||
@@ -188,51 +191,33 @@ const RegisterPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (validateForm()) {
+            // Validation of presence logic retained if needed, OR relaxed as requested
+            // User requested "supprimer ... la vérification VIES et UK" and show popup instead.
+            // But we might still want to ensure they typed *something* if field is visible?
+            // Let's keep basic presence check but remove the API call.
 
-            // Determine which ID to check
             let idToCheck = formData.tvaIntra;
             if (formData.tva === 'non-assujetti') {
                 idToCheck = formData.businessId;
             }
 
-            // Validation of presence
             if (formData.tva === 'assujetti' && !idToCheck) {
                 alert("Veuillez renseigner votre numéro de TVA.");
                 return;
             }
             if (formData.tva === 'non-assujetti' && !idToCheck && formData.country !== 'Etats-Unis') {
-                // Check if businessId is present for non-US
                 alert("Veuillez renseigner votre numéro d'entreprise.");
                 return;
             }
 
-            setIsVerifying(true);
-            try {
-                const res = await fetch(`${API_URL}/auth/verify-vat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        country: formData.country,
-                        vatNumber: idToCheck,
-                        tvaStatus: formData.tva
-                    })
-                });
-
-                const result = await res.json();
-
-                if (result.valid) {
-                    navigate('/register/payment', { state: { formData } });
-                } else {
-                    alert(result.message || "Vérification échouée.");
-                }
-
-            } catch (err) {
-                console.error("Verification error:", err);
-                alert("Erreur de connexion. Veuillez réessayer.");
-            } finally {
-                setIsVerifying(false);
-            }
+            // INSTEAD of calling API, show the Modal
+            setShowModal(true);
         }
+    };
+
+    const handleModalConfirm = () => {
+        setShowModal(false);
+        navigate('/register/payment', { state: { formData } });
     };
 
     const getCountryConfig = () => {
@@ -243,6 +228,42 @@ const RegisterPage = () => {
 
     return (
         <div className="login-container">
+            {showModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div style={{
+                        backgroundColor: '#fff', padding: '30px', borderRadius: '8px',
+                        maxWidth: '600px', width: '90%', maxHeight: '90vh', overflowY: 'auto',
+                        color: '#333', textAlign: 'left', fontFamily: 'Arial, sans-serif'
+                    }}>
+                        <h2 style={{ color: '#E85D04', marginBottom: '20px', textAlign: 'center' }}>Cher(ère) Artisan,</h2>
+
+                        <p>Afin de garantir la conformité et la validité de vos documents officiels, nous procédons actuellement à la vérification de votre numéro d'entreprise et/ou numéro de TVA.</p>
+
+                        <p>Cette étape est cruciale, car ces identifiants sont automatiquement intégrés dans tous les devis et factures générés par Artisanflow pour vos clients. Profitez pleinement de l'Application.</p>
+
+                        <p>Pendant cette courte période de vérification, vous avez déjà pleinement accès à toutes les fonctionnalités d'Artisanflow. Vous pouvez commencer immédiatement à créer vos premiers clients, organiser vos chantiers et préparer vos premiers documents !</p>
+
+                        <h4 style={{ marginTop: '20px', color: '#E85D04' }}>⏱️ Processus de Vérification et Suites</h4>
+
+                        <p><strong>Vérification Réussie (sous 24h) :</strong> Si toutes les informations sont validées, vous ne recevrez aucune notification de notre part. Votre compte restera actif et prêt à générer des documents légalement conformes.</p>
+
+                        <p><strong>Correction Requise :</strong> En cas d'incohérence ou d'erreur détectée, un email vous sera immédiatement envoyé. Vous pourrez alors accéder à vos paramètres pour effectuer la modification ou la correction nécessaire sans délai.</p>
+
+                        <p style={{ marginTop: '20px', fontWeight: 'bold' }}>Nous vous remercions de votre collaboration. La fiabilité de vos documents est notre priorité.</p>
+
+                        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                            <button onClick={handleModalConfirm} className="btn btn-primary" style={{ backgroundColor: '#E85D04', border: 'none', padding: '10px 30px', fontSize: '1.1rem' }}>
+                                OK J'AI COMPRIS
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <header className="header">
                 <div className="lang-wrapper">
                     <LanguageSelector />
@@ -415,12 +436,7 @@ const RegisterPage = () => {
                         )}
 
                         <button type="submit" className="btn btn-primary login-btn" disabled={isVerifying}>
-                            {isVerifying ? (
-                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                    <span className="spinner-border" style={{ width: '1rem', height: '1rem', borderWidth: '2px' }}></span>
-                                    VÉRIFICATION EN COURS...
-                                </span>
-                            ) : "CONTINUER"}
+                            CONTINUER
                         </button>
                     </form>
 
