@@ -13,7 +13,9 @@ const LoginPage = () => {
 
             <div className="login-content">
                 <div className="logo-section">
-                    <img src="/logo.jpg" alt="ArtisanFlow Logo" className="login-logo" />
+                    <Link to="/">
+                        <img src="/logo.jpg" alt="ArtisanFlow Logo" className="login-logo" />
+                    </Link>
                     <h1 className="brand-title-small">ARTISANFLOW</h1>
                     <h2 className="page-subtitle">CONNEXION</h2>
                 </div>
