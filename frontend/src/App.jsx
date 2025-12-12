@@ -9,7 +9,7 @@ import AdminLoginPage from './components/AdminLoginPage';
 import AdminDashboard from './components/AdminDashboard';
 import LegalPage from './components/LegalPage';
 
-import DownloadDesktopPage from './components/DownloadDesktopPage';
+
 import InstallPrompt from './components/InstallPrompt';
 
 function App() {
@@ -23,7 +23,7 @@ function App() {
         <Route path="/register/payment" element={<PaymentPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/mentions-legales" element={<LegalPage />} />
-        <Route path="/download/desktop" element={<DownloadDesktopPage />} />
+
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>

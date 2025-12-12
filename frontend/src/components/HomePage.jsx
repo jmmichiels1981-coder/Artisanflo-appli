@@ -25,7 +25,7 @@ const HomePage = () => {
 
             <main className="main-content">
                 <div className="logo-container">
-                    <img src="/logo.jpg" alt="ArtisanFlow Logo" className="main-logo" />
+                    <img src="/logo.png" alt="ArtisanFlow Logo" className="main-logo" />
                 </div>
 
                 <h1 className="brand-title">ARTISANFLOW</h1>
@@ -54,13 +54,49 @@ const HomePage = () => {
                     <button className="btn btn-primary" onClick={() => navigate('/register')}>INSCRIPTION</button>
 
                     {isDesktop && (
-                        <button
-                            className="btn btn-primary"
-                            style={{ marginTop: '10px', backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1' }}
-                            onClick={() => navigate('/download/desktop')}
-                        >
-                            INSTALLER SUR ORDINATEUR
-                        </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '500px' }}>
+                            <button
+                                className="btn btn-primary"
+                                style={{
+                                    marginTop: '10px',
+                                    backgroundColor: '#e2e8f0',
+                                    color: '#0f172a',
+                                    border: '1px solid #cbd5e1',
+                                    width: '100%'
+                                }}
+                                onClick={() => window.location.href = 'https://github.com/immichiels1981-coder/Artisanflow-appli/releases/download/v0.1.0/artisanflow_0.1.0_x64-setup.exe'}
+                            >
+                                INSTALLER SUR L'ORDINATEUR
+                            </button>
+
+                            <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: '10px', marginBottom: '15px' }}>
+                                Application officielle ArtisanFlow pour Windows.<br />
+                                Compatible Chrome, Edge et Firefox.
+                            </p>
+
+                            <div style={{
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                border: '1px solid rgba(59, 130, 246, 0.3)',
+                                borderRadius: '8px',
+                                padding: '15px',
+                                textAlign: 'left',
+                                fontSize: '0.85rem',
+                                color: '#e2e8f0',
+                                width: '100%'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', color: '#60a5fa', fontWeight: 'bold' }}>
+                                    <span style={{ marginRight: '8px', fontSize: '1.2rem' }}>ℹ️</span>
+                                    Info Sécurité Windows
+                                </div>
+                                <p style={{ margin: 0, lineHeight: '1.5' }}>
+                                    Lors de la première installation, Windows peut afficher un message de sécurité.<br />
+                                    Cliquez sur <strong>« Informations complémentaires »</strong>, puis sur <strong>« Exécuter quand même »</strong>.
+                                </p>
+                                <p style={{ marginTop: '8px', marginBottom: 0, fontStyle: 'italic', opacity: 0.8, fontSize: '0.8rem' }}>
+                                    L'application ArtisanFlow est officielle et sécurisée. Ce message est informatif, pas bloquant.
+                                </p>
+                            </div>
+                        </div>
                     )}
 
                     <div className="login-links">

@@ -177,7 +177,7 @@ const PaymentPage = () => {
                         margin: '0 auto 15px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: '0 0 20px rgba(249, 115, 22, 0.4)'
                     }}>
-                        <img src="/logo.jpg" alt="Logo" style={{ width: '40px', borderRadius: '50%' }} />
+                        <img src="/logo.png" alt="Logo" style={{ width: '40px', borderRadius: '50%' }} />
                     </div>
                     <h1 style={{ letterSpacing: '4px', fontSize: '1.2rem', fontWeight: 'bold' }}>ARTISANFLOW</h1>
                     <h2 style={{ fontSize: '0.8rem', color: '#888', letterSpacing: '2px', marginTop: '5px', textTransform: 'uppercase' }}>Inscription - Paiement</h2>
