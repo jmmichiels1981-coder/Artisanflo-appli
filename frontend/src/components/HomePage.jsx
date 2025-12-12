@@ -14,13 +14,19 @@ const HomePage = () => {
         const isMobile = /android|iphone|ipad|ipod/.test(userAgent);
         setIsDesktop(!isMobile);
 
+        console.log('Debug PWA: Desktop detected?', !isMobile, 'UserAgent:', userAgent);
+
         // Check for existing prompt
         if (window.deferredPrompt) {
+            console.log('Debug PWA: Found existing global deferredPrompt');
             setInstallPrompt(window.deferredPrompt);
+        } else {
+            console.log('Debug PWA: No global deferredPrompt found on mount');
         }
 
         // Listen for future prompt
         const handleBeforeInstallPrompt = (e) => {
+            console.log('Debug PWA: beforeinstallprompt fired in component!');
             e.preventDefault();
             setInstallPrompt(e);
             window.deferredPrompt = e;
