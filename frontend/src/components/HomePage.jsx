@@ -5,6 +5,42 @@ import LanguageSelector from './LanguageSelector';
 
 const HomePage = () => {
     const navigate = useNavigate();
+    const [installPrompt, setInstallPrompt] = React.useState(null);
+    const [isDesktop, setIsDesktop] = React.useState(false);
+
+    React.useEffect(() => {
+        // Check for Desktop
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        const isMobile = /android|iphone|ipad|ipod/.test(userAgent);
+        setIsDesktop(!isMobile);
+
+        // Check for existing prompt
+        if (window.deferredPrompt) {
+            setInstallPrompt(window.deferredPrompt);
+        }
+
+        // Listen for future prompt
+        const handleBeforeInstallPrompt = (e) => {
+            e.preventDefault();
+            setInstallPrompt(e);
+            window.deferredPrompt = e;
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!installPrompt) return;
+        installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        setInstallPrompt(null);
+        window.deferredPrompt = null;
+    };
 
     return (
         <div className="home-container">
@@ -42,6 +78,16 @@ const HomePage = () => {
                 <div className="actions">
                     <button className="btn btn-primary" onClick={() => navigate('/login')}>SE CONNECTER</button>
                     <button className="btn btn-primary" onClick={() => navigate('/register')}>INSCRIPTION</button>
+
+                    {isDesktop && installPrompt && (
+                        <button
+                            className="btn btn-primary"
+                            style={{ marginTop: '10px', backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1' }}
+                            onClick={handleInstallClick}
+                        >
+                            INSTALLER SUR PC
+                        </button>
+                    )}
 
                     <div className="login-links">
                         <div className="link-row mt-small">
