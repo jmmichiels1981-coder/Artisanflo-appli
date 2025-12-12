@@ -5,7 +5,6 @@ import LanguageSelector from './LanguageSelector';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const [installPrompt, setInstallPrompt] = React.useState(null);
     const [isDesktop, setIsDesktop] = React.useState(false);
 
     React.useEffect(() => {
@@ -15,40 +14,28 @@ const HomePage = () => {
         setIsDesktop(!isMobile);
 
         console.log('Debug PWA: Desktop detected?', !isMobile, 'UserAgent:', userAgent);
-
-        // Check for existing prompt
-        if (window.deferredPrompt) {
-            console.log('Debug PWA: Found existing global deferredPrompt');
-            setInstallPrompt(window.deferredPrompt);
-        } else {
-            console.log('Debug PWA: No global deferredPrompt found on mount');
-        }
-
-        // Listen for future prompt
-        const handleBeforeInstallPrompt = (e) => {
-            console.log('Debug PWA: beforeinstallprompt fired in component!');
-            e.preventDefault();
-            setInstallPrompt(e);
-            window.deferredPrompt = e;
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-        return () => {
-            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        };
     }, []);
 
-    const handleInstallClick = async () => {
-        if (!installPrompt) {
-            alert("L'installation automatique n'est pas disponible pour le moment.\n\nVeuillez utiliser l'option 'Installer l'application' dans le menu de votre navigateur (généralement en haut à droite).");
-            return;
-        }
-        installPrompt.prompt();
-        const { outcome } = await installPrompt.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
-        setInstallPrompt(null);
-        window.deferredPrompt = null;
+    const handleDownloadShortcut = () => {
+        // Generate .url file content for Windows
+        // Use the current origin (e.g. https://artisanflow.com)
+        const urlContent = `[InternetShortcut]\nURL=${window.location.origin}\nIconIndex=0`;
+        const blob = new Blob([urlContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+
+        // Trigger download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ArtisanFlow.url';
+        document.body.appendChild(a);
+        a.click();
+
+        // Cleanup
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        // Show confirmation
+        alert("Raccourci créé ! Vérifiez vos téléchargements et placez le fichier 'ArtisanFlow.url' sur votre bureau.");
     };
 
     return (
@@ -92,9 +79,9 @@ const HomePage = () => {
                         <button
                             className="btn btn-primary"
                             style={{ marginTop: '10px', backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1' }}
-                            onClick={handleInstallClick}
+                            onClick={handleDownloadShortcut}
                         >
-                            INSTALLER SUR PC
+                            INSTALLER SUR ORDINATEUR
                         </button>
                     )}
 
