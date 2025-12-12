@@ -626,7 +626,7 @@ IconIndex=0
         return Response(
             shortcut_content,
             mimetype="application/octet-stream", # Octet-stream to force download
-            headers={"Content-Disposition": "attachment;filename=ArtisanFlow.url"}
+            headers={"Content-Disposition": 'attachment; filename="ArtisanFlow.url"'}
         )
     except Exception as e:
         print(f"Shortcut download error: {e}")
