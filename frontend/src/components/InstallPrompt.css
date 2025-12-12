@@ -1,0 +1,136 @@
+/* InstallPrompt.css */
+.install-prompt-overlay {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    /* Or centered, usually top-right or bottom-center. Screen implies top-right or center */
+    /* Screenshot looks like a toast/notification card, likely top-right on desktop or bottom-sheet on mobile. 
+       The user said "pop up... s'affiche". The screenshot is a dark card. 
+       Let's stick to a fixed position, centered top or bottom? 
+       Actually user says "mobile or pc". 
+       Let's position it: Top Center or Top Right for PC, Bottom for Mobile?
+       The screenshot is just the card. Let's make it fixed top-right for desktop, bottom for mobile.
+    */
+    z-index: 9999;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.install-card {
+    background-color: #1e293b;
+    /* Dark slate */
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    width: 350px;
+    position: relative;
+    border: 1px solid #334155;
+    font-family: 'Inter', sans-serif;
+}
+
+.install-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.install-close:hover {
+    color: white;
+}
+
+.install-content {
+    display: flex;
+    gap: 15px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.install-icon-wrapper {
+    background-color: #f97316;
+    /* Orange */
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.install-icon-wrapper svg {
+    stroke: white;
+    fill: none;
+}
+
+.install-text h3 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.install-text p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+}
+
+.install-btn {
+    background-color: #f97316;
+    /* Orange */
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.install-btn:hover {
+    background-color: #ea580c;
+}
+
+/* Mobile responsive positioning */
+@media (max-width: 768px) {
+    .install-prompt-overlay {
+        top: auto;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        width: auto;
+        display: flex;
+        justify-content: center;
+    }
+
+    .install-card {
+        width: 100%;
+        max-width: 400px;
+    }
+}

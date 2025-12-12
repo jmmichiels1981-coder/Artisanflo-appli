@@ -8,10 +8,12 @@ import ContactPage from './components/ContactPage';
 import AdminLoginPage from './components/AdminLoginPage';
 import AdminDashboard from './components/AdminDashboard';
 import LegalPage from './components/LegalPage';
+import InstallPrompt from './components/InstallPrompt';
 
 function App() {
   return (
     <Router>
+      <InstallPrompt />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
