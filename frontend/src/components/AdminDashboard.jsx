@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import API_URL from '../config';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -63,15 +64,14 @@ const AdminDashboard = () => {
 
     React.useEffect(() => {
         const fetchStats = async () => {
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('adminToken');
             if (!token) {
                 navigate('/admin/login');
                 return;
             }
 
             try {
-                const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://artisanflow-api-prod.onrender.com';
-                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                const response = await fetch(`${API_URL}/admin/stats`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -79,7 +79,7 @@ const AdminDashboard = () => {
 
                 if (response.status === 401) {
                     // Token expired or invalid
-                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('adminToken');
                     navigate('/admin/login');
                     return;
                 }
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
     }, [navigate]);
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('adminToken');
         navigate('/admin/login');
     };
 
