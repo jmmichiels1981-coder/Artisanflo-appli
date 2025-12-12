@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -612,8 +612,6 @@ def verify_payment():
 @app.route('/api/download-shortcut', methods=['GET'])
 def download_shortcut():
     try:
-        from flask import Response
-        
         target_url = "https://www.artisanflow-appli.com"
         # Pointing IconFile to the remote favicon.ico which is more standard.
         icon_url = "https://www.artisanflow-appli.com/favicon.ico"

@@ -18,7 +18,11 @@ const HomePage = () => {
 
     const handleDownloadShortcut = () => {
         // Use Backend to generate file (avoids security warnings & adds icon)
-        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://artisanflow-api-prod.onrender.com';
+        // Correcting URL to match the actual deployed backend: artisanflo-appli-backend
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:5000'
+            : 'https://artisanflo-appli-backend.onrender.com';
+
         window.location.href = `${API_URL}/api/download-shortcut`;
 
         // Show confirmation hint
