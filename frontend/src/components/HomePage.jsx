@@ -18,8 +18,8 @@ const HomePage = () => {
 
     const handleDownloadShortcut = () => {
         // Generate .url file content for Windows
-        // Use the current origin (e.g. https://artisanflow.com)
-        const urlContent = `[InternetShortcut]\nURL=${window.location.origin}\nIconIndex=0`;
+        const productionUrl = 'https://www.artisanflow-appli.com';
+        const urlContent = `[InternetShortcut]\nURL=${productionUrl}\nIconIndex=0`;
         const blob = new Blob([urlContent], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
 
