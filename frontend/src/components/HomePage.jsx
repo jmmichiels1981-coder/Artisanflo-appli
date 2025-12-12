@@ -16,21 +16,6 @@ const HomePage = () => {
         console.log('Debug PWA: Desktop detected?', !isMobile, 'UserAgent:', userAgent);
     }, []);
 
-    const handleDownloadShortcut = () => {
-        // Use Backend to generate file (avoids security warnings & adds icon)
-        // Correcting URL to match the actual deployed backend: artisanflo-appli-backend
-        const API_URL = window.location.hostname === 'localhost'
-            ? 'http://localhost:5000'
-            : 'https://artisanflo-appli-backend.onrender.com';
-
-        window.location.href = `${API_URL}/api/download-shortcut`;
-
-        // Show confirmation hint
-        setTimeout(() => {
-            alert("Raccourci créé ! Vérifiez vos téléchargements et placez le fichier 'ArtisanFlow.url' sur votre bureau.");
-        }, 2000);
-    };
-
     return (
         <div className="home-container">
             <header className="header">
@@ -72,7 +57,7 @@ const HomePage = () => {
                         <button
                             className="btn btn-primary"
                             style={{ marginTop: '10px', backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1' }}
-                            onClick={handleDownloadShortcut}
+                            onClick={() => navigate('/download/desktop')}
                         >
                             INSTALLER SUR ORDINATEUR
                         </button>
