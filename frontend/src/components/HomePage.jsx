@@ -6,6 +6,7 @@ import LanguageSelector from './LanguageSelector';
 const HomePage = () => {
     const navigate = useNavigate();
     const [isDesktop, setIsDesktop] = React.useState(false);
+    const [showFavoriteModal, setShowFavoriteModal] = React.useState(false);
 
     React.useEffect(() => {
         // Check for Desktop
@@ -54,49 +55,81 @@ const HomePage = () => {
                     <button className="btn btn-primary" onClick={() => navigate('/register')}>INSCRIPTION</button>
 
                     {isDesktop && (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', maxWidth: '500px' }}>
+                        <>
                             <button
                                 className="btn btn-primary"
                                 style={{
                                     marginTop: '10px',
                                     backgroundColor: '#e2e8f0',
                                     color: '#0f172a',
-                                    border: '1px solid #cbd5e1',
-                                    width: '100%'
+                                    border: '1px solid #cbd5e1'
                                 }}
-                                onClick={() => window.location.href = 'https://github.com/jmmichiels1981-coder/Artisanflo-appli/releases/download/v0.1.0/artisanflow_0.1.0_x64-setup.exe'}
+                                onClick={() => setShowFavoriteModal(true)}
                             >
-                                INSTALLER SUR L'ORDINATEUR
+                                Ajouter ArtisanFlow en favori sur ordinateur
                             </button>
 
-                            <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: '10px', marginBottom: '15px' }}>
-                                Application officielle ArtisanFlow pour Windows.<br />
-                                Compatible Chrome, Edge et Firefox.
-                            </p>
+                            {showFavoriteModal && (
+                                <div style={{
+                                    position: 'fixed',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    backgroundColor: 'rgba(0,0,0,0.8)',
+                                    zIndex: 1000,
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                }}>
+                                    <div style={{
+                                        backgroundColor: '#1e293b',
+                                        padding: '30px',
+                                        borderRadius: '12px',
+                                        maxWidth: '500px',
+                                        width: '90%',
+                                        textAlign: 'left',
+                                        color: '#fff',
+                                        border: '1px solid #334155',
+                                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+                                    }}>
+                                        <h3 style={{ marginTop: 0, color: '#f97316', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+                                            <span style={{ marginRight: '10px' }}>🖥️</span>
+                                            Accès rapide à ArtisanFlow sur ordinateur
+                                        </h3>
 
-                            <div style={{
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                border: '1px solid rgba(59, 130, 246, 0.3)',
-                                borderRadius: '8px',
-                                padding: '15px',
-                                textAlign: 'left',
-                                fontSize: '0.85rem',
-                                color: '#e2e8f0',
-                                width: '100%'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', color: '#60a5fa', fontWeight: 'bold' }}>
-                                    <span style={{ marginRight: '8px', fontSize: '1.2rem' }}>ℹ️</span>
-                                    Info Sécurité Windows
+                                        <p style={{ lineHeight: '1.6' }}>
+                                            Pour accéder rapidement à ArtisanFlow depuis votre ordinateur, vous pouvez l’ajouter à vos favoris en quelques secondes.
+                                        </p>
+
+                                        <div style={{ backgroundColor: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '8px', margin: '20px 0' }}>
+                                            <p style={{ fontWeight: 'bold', marginBottom: '10px', color: '#e2e8f0' }}>Étapes :</p>
+                                            <ol style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+                                                <li>Appuyez sur <span style={{ backgroundColor: '#334155', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>Ctrl + D</span> sur votre clavier</li>
+                                                <li>Cliquez sur <strong>Ajouter</strong></li>
+                                            </ol>
+                                            <p style={{ marginTop: '10px', marginBottom: 0 }}>
+                                                ArtisanFlow sera ensuite accessible en un clic depuis vos favoris.
+                                            </p>
+                                        </div>
+
+                                        <p style={{ fontSize: '0.9rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                                            ℹ️ Cette méthode est la plus simple et fonctionne sur tous les navigateurs (Chrome, Edge, Firefox).
+                                        </p>
+
+                                        <div style={{ marginTop: '25px', textAlign: 'center' }}>
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={() => setShowFavoriteModal(false)}
+                                                style={{ minWidth: '150px' }}
+                                            >
+                                                J'ai compris
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p style={{ margin: 0, lineHeight: '1.5' }}>
-                                    Lors de la première installation, Windows peut afficher un message de sécurité.<br />
-                                    Cliquez sur <strong>« Informations complémentaires »</strong>, puis sur <strong>« Exécuter quand même »</strong>.
-                                </p>
-                                <p style={{ marginTop: '8px', marginBottom: 0, fontStyle: 'italic', opacity: 0.8, fontSize: '0.8rem' }}>
-                                    L'application ArtisanFlow est officielle et sécurisée. Ce message est informatif, pas bloquant.
-                                </p>
-                            </div>
-                        </div>
+                            )}
+                        </>
                     )}
 
                     <div className="login-links">
