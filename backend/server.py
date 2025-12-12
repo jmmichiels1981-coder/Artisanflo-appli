@@ -505,7 +505,7 @@ def admin_login():
                 token_payload = {
                     'user_email': email,
                     'role': 'admin',
-                    'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+                    'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
                 }
                 secret_key = os.getenv('SECRET_KEY', 'default_secret_key_change_me')
                 token = jwt.encode(token_payload, secret_key, algorithm='HS256')
@@ -523,6 +523,46 @@ def admin_login():
     except Exception as e:
         print(f"Admin login error: {e}")
         return jsonify({"success": False, "message": "Erreur serveur"}), 500
+
+from functools import wraps
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        # Check header
+        if 'Authorization' in request.headers:
+            auth_header = request.headers['Authorization']
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+        
+        if not token:
+            return jsonify({'message': 'Token is missing'}), 401
+        
+        try:
+            secret_key = os.getenv('SECRET_KEY', 'default_secret_key_change_me')
+            data = jwt.decode(token, secret_key, algorithms=["HS256"])
+            # current_user = data['user_email'] 
+            # Could fetch user here if needed
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token is expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Token is invalid'}), 401
+            
+        return f(*args, **kwargs)
+    return decorated
+
+@app.route('/api/admin/stats', methods=['GET'])
+@token_required
+def get_admin_stats():
+    # Return mock or real stats
+    # For now, return what the dashboard expects (0s) but protected
+    stats = {
+        "users": users_collection.count_documents({}) if users_collection is not None else 0,
+        "invoices": 0,
+        "quotes": 0
+    }
+    return jsonify(stats), 200
 
 import stripe
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')

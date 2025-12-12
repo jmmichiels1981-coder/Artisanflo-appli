@@ -59,8 +59,45 @@ const AdminDashboard = () => {
         </svg>
     );
 
+    const [stats, setStats] = React.useState({ users: 0, invoices: 0, quotes: 0 });
+
+    React.useEffect(() => {
+        const fetchStats = async () => {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                navigate('/admin/login');
+                return;
+            }
+
+            try {
+                const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://artisanflow-api-prod.onrender.com';
+                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('authToken');
+                    navigate('/admin/login');
+                    return;
+                }
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error("Error fetching admin stats", error);
+            }
+        };
+
+        fetchStats();
+    }, [navigate]);
+
     const handleLogout = () => {
-        // Clear any tokens if we had them
+        localStorage.removeItem('authToken');
         navigate('/admin/login');
     };
 
@@ -116,7 +153,7 @@ const AdminDashboard = () => {
                         <div className="card-icon" style={{ stroke: '#60a5fa' }}><UserIcon /></div>
                         <span className="card-label" style={{ color: '#60a5fa' }}>UTILISATEURS</span>
                     </div>
-                    <div className="card-value">0</div>
+                    <div className="card-value">{stats.users}</div>
                     <div className="card-subtext">Comptes artisans</div>
                 </div>
 
@@ -126,7 +163,7 @@ const AdminDashboard = () => {
                         <div className="card-icon" style={{ stroke: '#34d399' }}><FileTextIcon /></div>
                         <span className="card-label" style={{ color: '#34d399' }}>FACTURES</span>
                     </div>
-                    <div className="card-value">0</div>
+                    <div className="card-value">{stats.invoices}</div>
                     <div className="card-subtext">Total générées</div>
                 </div>
 
@@ -136,7 +173,7 @@ const AdminDashboard = () => {
                         <div className="card-icon" style={{ stroke: '#a78bfa' }}><ScrollIcon /></div>
                         <span className="card-label" style={{ color: '#a78bfa' }}>DEVIS</span>
                     </div>
-                    <div className="card-value">0</div>
+                    <div className="card-value">{stats.quotes}</div>
                     <div className="card-subtext">Total créés</div>
                 </div>
 
