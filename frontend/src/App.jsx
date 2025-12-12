@@ -8,7 +8,7 @@ import ContactPage from './components/ContactPage';
 import AdminLoginPage from './components/AdminLoginPage';
 import AdminDashboard from './components/AdminDashboard';
 import LegalPage from './components/LegalPage';
-import LegalPage from './components/LegalPage';
+
 import DownloadDesktopPage from './components/DownloadDesktopPage';
 import InstallPrompt from './components/InstallPrompt';
 
