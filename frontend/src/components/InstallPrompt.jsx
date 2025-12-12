@@ -20,22 +20,15 @@ const InstallPrompt = () => {
         }
 
         // --- Android / Chrome Logic ---
-        // If event fired before mount, grab it from window
-        if (window.deferredPrompt) {
-            setDeferredPrompt(window.deferredPrompt);
-        }
-
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
-            window.deferredPrompt = e; // Keep global in sync
         };
 
         const handleAppInstalled = () => {
             setIsInstalled(true);
             setShowPrompt(false);
             setDeferredPrompt(null);
-            window.deferredPrompt = null;
             console.log('PWA was installed');
         };
 
@@ -53,7 +46,16 @@ const InstallPrompt = () => {
         const timer = setTimeout(() => {
             if (isInstalled) return;
 
-            // Scenario 1: Android/PC - we need the deferredPrompt event
+            // Check for Mobile (Android/iOS)
+            const userAgent = window.navigator.userAgent.toLowerCase();
+            const isMobile = /android|iphone|ipad|ipod/.test(userAgent);
+
+            if (!isMobile) {
+                console.log('PC device detected, suppressing install prompt as requested.');
+                return;
+            }
+
+            // Scenario 1: Android - we need the deferredPrompt event
             if (!isIOs && deferredPrompt) {
                 setShowPrompt(true);
             }

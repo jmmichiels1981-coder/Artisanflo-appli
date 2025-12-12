@@ -1,12 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Capture PWA install prompt event early
-window.deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  window.deferredPrompt = e;
-  console.log('beforeinstallprompt fired globally');
-});
+import './index.css'
+import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
