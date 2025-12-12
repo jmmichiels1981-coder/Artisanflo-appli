@@ -40,7 +40,10 @@ const HomePage = () => {
     }, []);
 
     const handleInstallClick = async () => {
-        if (!installPrompt) return;
+        if (!installPrompt) {
+            alert("L'installation automatique n'est pas disponible pour le moment.\n\nVeuillez utiliser l'option 'Installer l'application' dans le menu de votre navigateur (généralement en haut à droite).");
+            return;
+        }
         installPrompt.prompt();
         const { outcome } = await installPrompt.userChoice;
         console.log(`User response to the install prompt: ${outcome}`);
@@ -85,7 +88,7 @@ const HomePage = () => {
                     <button className="btn btn-primary" onClick={() => navigate('/login')}>SE CONNECTER</button>
                     <button className="btn btn-primary" onClick={() => navigate('/register')}>INSCRIPTION</button>
 
-                    {isDesktop && installPrompt && (
+                    {isDesktop && (
                         <button
                             className="btn btn-primary"
                             style={{ marginTop: '10px', backgroundColor: '#e2e8f0', color: '#0f172a', border: '1px solid #cbd5e1' }}
