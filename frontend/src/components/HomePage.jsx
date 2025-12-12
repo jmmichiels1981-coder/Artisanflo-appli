@@ -17,25 +17,14 @@ const HomePage = () => {
     }, []);
 
     const handleDownloadShortcut = () => {
-        // Generate .url file content for Windows
-        const productionUrl = 'https://www.artisanflow-appli.com';
-        const urlContent = `[InternetShortcut]\nURL=${productionUrl}\nIconIndex=0`;
-        const blob = new Blob([urlContent], { type: 'text/plain' });
-        const url = window.URL.createObjectURL(blob);
+        // Use Backend to generate file (avoids security warnings & adds icon)
+        const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : 'https://artisanflow-api-prod.onrender.com';
+        window.location.href = `${API_URL}/api/download-shortcut`;
 
-        // Trigger download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'ArtisanFlow.url';
-        document.body.appendChild(a);
-        a.click();
-
-        // Cleanup
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-
-        // Show confirmation
-        alert("Raccourci créé ! Vérifiez vos téléchargements et placez le fichier 'ArtisanFlow.url' sur votre bureau.");
+        // Show confirmation hint
+        setTimeout(() => {
+            alert("Raccourci créé ! Vérifiez vos téléchargements et placez le fichier 'ArtisanFlow.url' sur votre bureau.");
+        }, 2000);
     };
 
     return (

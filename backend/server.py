@@ -609,6 +609,30 @@ def verify_payment():
         # Fail open on generic error to allow registration to proceed
         return jsonify({"valid": True, "message": "Erreur serveur, validé par sécurité"}), 200
 
+@app.route('/api/download-shortcut', methods=['GET'])
+def download_shortcut():
+    try:
+        from flask import Response
+        
+        target_url = "https://www.artisanflow-appli.com"
+        # Pointing IconFile to the remote logo. 
+        # Note: Windows might cache this or require a .ico, but this is the best effort for remote icon.
+        icon_url = "https://www.artisanflow-appli.com/logo.jpg"
+        
+        shortcut_content = f"""[InternetShortcut]
+URL={target_url}
+IconFile={icon_url}
+IconIndex=0
+"""
+        return Response(
+            shortcut_content,
+            mimetype="application/octet-stream", # Octet-stream to force download
+            headers={"Content-Disposition": "attachment;filename=ArtisanFlow.url"}
+        )
+    except Exception as e:
+        print(f"Shortcut download error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
