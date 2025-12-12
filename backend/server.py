@@ -615,9 +615,8 @@ def download_shortcut():
         from flask import Response
         
         target_url = "https://www.artisanflow-appli.com"
-        # Pointing IconFile to the remote logo. 
-        # Note: Windows might cache this or require a .ico, but this is the best effort for remote icon.
-        icon_url = "https://www.artisanflow-appli.com/logo.jpg"
+        # Pointing IconFile to the remote favicon.ico which is more standard.
+        icon_url = "https://www.artisanflow-appli.com/favicon.ico"
         
         shortcut_content = f"""[InternetShortcut]
 URL={target_url}
