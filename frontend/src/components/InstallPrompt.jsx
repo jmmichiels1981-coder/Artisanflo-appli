@@ -109,8 +109,13 @@ const InstallPrompt = () => {
                                 </ol>
                             </div>
                         ) : (
-                            <p>Accédez rapidement à votre espace depuis votre écran d'accueil</p>
+                            <div style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
+                                <p style={{ marginBottom: '8px' }}>Accédez rapidement à votre espace depuis votre écran d'accueil.</p>
+                            </div>
                         )}
+                        <p style={{ marginTop: '12px', fontSize: '0.8rem', color: '#94a3b8', borderTop: '1px solid #334155', paddingTop: '8px' }}>
+                            Pour utiliser votre application sur ordinateur, rendez-vous sur <strong>www.artisanflow-appli.com</strong> et cliquez sur "INSTALLER SUR ORDINATEUR" en dessous du bouton INSCRIPTION.
+                        </p>
                     </div>
                 </div>
 
