@@ -49,7 +49,7 @@ const HomePage = () => {
                             <span className="separator">|</span>
                             <Link to="/contact" className="text-orange">contact</Link>
                             <span className="separator">|</span>
-                            <a href="#" className="text-orange">mentions légales</a>
+                            <Link to="/mentions-legales" className="text-orange">mentions légales</Link>
                         </div>
                     </div>
                 </div>
