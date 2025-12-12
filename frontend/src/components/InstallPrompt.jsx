@@ -20,15 +20,22 @@ const InstallPrompt = () => {
         }
 
         // --- Android / Chrome Logic ---
+        // If event fired before mount, grab it from window
+        if (window.deferredPrompt) {
+            setDeferredPrompt(window.deferredPrompt);
+        }
+
         const handleBeforeInstallPrompt = (e) => {
             e.preventDefault();
             setDeferredPrompt(e);
+            window.deferredPrompt = e; // Keep global in sync
         };
 
         const handleAppInstalled = () => {
             setIsInstalled(true);
             setShowPrompt(false);
             setDeferredPrompt(null);
+            window.deferredPrompt = null;
             console.log('PWA was installed');
         };
 
