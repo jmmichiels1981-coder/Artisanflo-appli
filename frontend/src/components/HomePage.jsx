@@ -64,7 +64,7 @@ const HomePage = () => {
                                     border: '1px solid #cbd5e1',
                                     width: '100%'
                                 }}
-                                onClick={() => window.location.href = 'https://github.com/jmmichiels1981-coder/Artisanflow-appli/releases/download/v0.1.0/artisanflow_0.1.0_x64-setup.exe'}
+                                onClick={() => window.location.href = 'https://github.com/jmmichiels1981-coder/Artisanflo-appli/releases/download/v0.1.0/artisanflow_0.1.0_x64-setup.exe'}
                             >
                                 INSTALLER SUR L'ORDINATEUR
                             </button>
