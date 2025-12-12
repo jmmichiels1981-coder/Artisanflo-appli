@@ -623,7 +623,7 @@ IconIndex=0
 """
         return Response(
             shortcut_content,
-            mimetype="application/octet-stream", # Octet-stream to force download
+            mimetype="application/internet-shortcut", # MIME type for .url files
             headers={"Content-Disposition": 'attachment; filename="ArtisanFlow.url"'}
         )
     except Exception as e:
