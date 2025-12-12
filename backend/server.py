@@ -613,8 +613,9 @@ def verify_payment():
 def download_shortcut():
     try:
         target_url = "https://www.artisanflow-appli.com"
-        # Pointing IconFile to the remote favicon.ico which is more standard.
-        icon_url = "https://www.artisanflow-appli.com/favicon.ico"
+        # Reverting to logo.jpg because a renamed .ico (fake ico) is rejected by Windows.
+        # Valid JPG is better than invalid ICO.
+        icon_url = "https://www.artisanflow-appli.com/logo.jpg"
         
         shortcut_content = f"""[InternetShortcut]
 URL={target_url}
@@ -623,7 +624,7 @@ IconIndex=0
 """
         return Response(
             shortcut_content,
-            mimetype="application/internet-shortcut", # MIME type for .url files
+            mimetype="application/octet-stream", # Octet-stream as requested by user
             headers={"Content-Disposition": 'attachment; filename="ArtisanFlow.url"'}
         )
     except Exception as e:
